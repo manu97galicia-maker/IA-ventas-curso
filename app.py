@@ -1,115 +1,144 @@
 import streamlit as st
 import pandas as pd
 
-# Configuración general (optimizada para móvil)
+# -----------------------------
+# CONFIGURACIÓN GENERAL
+# -----------------------------
 st.set_page_config(
     page_title="IA Ventas Cursos",
-    layout="wide"
+    layout="centered"
 )
 
-st.title("🧠 IA para Optimización Total de Ventas de Cursos")
-st.caption("Prioriza leads, optimiza llamadas, segunda llamada y retargeting")
-
-# =============================
-# DATOS SIMULADOS (como CRM)
-# =============================
-data = {
-    "Lead": ["Ana", "Carlos", "María", "Jorge", "Lucía"],
-    "Edad": [52, 34, 45, 29, 57],
-    "Curso": ["Executive", "Marketing", "MBA", "Programación", "Executive"],
-    "Precio (€)": [3200, 1200, 2800, 900, 3500],
-    "Probabilidad de Cierre (%)": [78, 42, 65, 25, 82],
-    "Primer Contacto": [
-        "No respondió",
-        "Respondió",
-        "No compró",
-        "No respondió",
-        "Respondió"
-    ],
-    "Comercial Ideal": ["Ana", "Juan", "Laura", "Juan", "Ana"]
+# Estilos CSS (mobile friendly)
+st.markdown("""
+<style>
+.card {
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
+.high { border-left: 6px solid #2ecc71; }
+.medium { border-left: 6px solid #f1c40f; }
+.low { border-left: 6px solid #e74c3c; }
+.label {
+    font-size: 12px;
+    color: #888;
+}
+.value {
+    font-size: 18px;
+    font-weight: 600;
+}
+.action {
+    margin-top: 10px;
+    font-weight: bold;
+}
+</style>
+""", unsafe_allow_html=True)
 
-df = pd.DataFrame(data)
+# -----------------------------
+# TÍTULO
+# -----------------------------
+st.title("🧠 IA de Ventas")
+st.caption("Decisiones automáticas para vender más cursos")
 
-# =============================
-# MOTOR DE DECISIÓN
-# =============================
-def siguiente_accion(row):
-    if row["Probabilidad de Cierre (%)"] >= 70:
+# -----------------------------
+# CARGA DE DATOS
+# -----------------------------
+df = pd.read_csv("leads.csv")
+
+df.rename(columns={
+    "Precio": "Precio (€)",
+    "Probabilidad": "Probabilidad de Cierre (%)",
+    "Primer_Contacto": "Primer Contacto",
+    "Comercial_Ideal": "Comercial Ideal"
+}, inplace=True)
+
+# -----------------------------
+# LÓGICA DE DECISIÓN
+# -----------------------------
+def prioridad(prob):
+    if prob >= 70:
+        return "Alta", "high"
+    elif prob >= 40:
+        return "Media", "medium"
+    else:
+        return "Baja", "low"
+
+def canal(edad):
+    if edad >= 45:
+        return "📞 Llamada / Videollamada"
+    elif edad >= 30:
+        return "💬 WhatsApp"
+    else:
+        return "📧 Email"
+
+def accion(prob):
+    if prob >= 70:
         return "📞 Llamar hoy"
-    elif row["Probabilidad de Cierre (%)"] >= 40:
-        return "🔁 Segunda llamada programada"
+    elif prob >= 40:
+        return "🔁 Programar segunda llamada"
     else:
         return "📲 Retargeting automático"
 
-def canal_optimo(row):
-    if row["Edad"] >= 45:
-        return "Llamada / Videollamada"
-    elif row["Edad"] >= 30:
-        return "WhatsApp"
-    else:
-        return "Email"
-
-def segunda_llamada(row):
-    if row["Primer Contacto"] == "No respondió":
+def seguimiento(contacto):
+    if contacto == "No respondió":
         return "📅 Mañana 18:00"
-    elif row["Primer Contacto"] == "No compró":
+    elif contacto == "No compró":
         return "📅 En 3 días 17:00"
     else:
         return "—"
 
-def retargeting(row):
-    if row["Probabilidad de Cierre (%)"] < 40:
-        return "Email + Ads suaves"
-    elif row["Probabilidad de Cierre (%)"] < 70:
-        return "WhatsApp recordatorio"
-    else:
-        return "No necesario"
+# -----------------------------
+# MÉTRICAS SUPERIORES
+# -----------------------------
+st.subheader("📊 Hoy")
+col1, col2 = st.columns(2)
+col1.metric("Leads", len(df))
+col2.metric("Mejora cierre", "+29 %")
 
-df["Canal Óptimo"] = df.apply(canal_optimo, axis=1)
-df["Siguiente Acción"] = df.apply(siguiente_accion, axis=1)
-df["Segunda Llamada"] = df.apply(segunda_llamada, axis=1)
-df["Retargeting"] = df.apply(retargeting, axis=1)
+st.divider()
 
-# =============================
-# DASHBOARD PRINCIPAL
-# =============================
-st.subheader("🔥 Leads priorizados y acciones recomendadas")
+# -----------------------------
+# TARJETAS DE LEADS (CORE VISUAL)
+# -----------------------------
+st.subheader("🔥 Prioridad de hoy")
 
-st.dataframe(
-    df[
-        [
-            "Lead",
-            "Probabilidad de Cierre (%)",
-            "Precio (€)",
-            "Comercial Ideal",
-            "Canal Óptimo",
-            "Siguiente Acción",
-            "Segunda Llamada",
-            "Retargeting"
-        ]
-    ],
-    use_container_width=True
-)
+for _, row in df.iterrows():
+    nivel, clase = prioridad(row["Probabilidad de Cierre (%)"])
+    
+    st.markdown(f"""
+    <div class="card {clase}">
+        <div class="label">Lead</div>
+        <div class="value">{row["Lead"]} ({row["Edad"]} años)</div>
 
-# =============================
-# MÉTRICAS DE IMPACTO
-# =============================
-st.subheader("📈 Impacto estimado en ventas")
+        <div class="label">Curso</div>
+        <div class="value">{row["Curso"]} – €{row["Precio (€)"]}</div>
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Leads analizados", len(df))
-col2.metric("Mejora tasa de cierre", "+29 %")
-col3.metric("Ingresos extra estimados", "+21.600 €")
+        <div class="label">Prioridad</div>
+        <div class="value">{nivel} ({row["Probabilidad de Cierre (%)"]}%)</div>
 
-# =============================
+        <div class="label">Comercial</div>
+        <div class="value">{row["Comercial Ideal"]}</div>
+
+        <div class="label">Canal recomendado</div>
+        <div class="value">{canal(row["Edad"])}
+</div>
+
+        <div class="action">👉 {accion(row["Probabilidad de Cierre (%)"])}</div>
+        <div class="label">Seguimiento: {seguimiento(row["Primer Contacto"])}
+</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# -----------------------------
 # EXPLICACIÓN SIMPLE
-# =============================
-with st.expander("🤔 ¿Por qué la IA recomienda estas acciones?"):
+# -----------------------------
+with st.expander("🤔 ¿Cómo decide la IA?"):
     st.write("""
-    • Leads con alta probabilidad → llamada inmediata  
-    • Leads templados → segunda llamada optimizada  
-    • Leads fríos → retargeting automático  
-    • Comercial asignado según perfil del lead  
-    • Canal elegido según edad y comportamiento  
+    • Prioriza por probabilidad y ticket  
+    • Asigna canal según edad y patrón histórico  
+    • Decide segunda llamada o retargeting  
+    • Enfocado a maximizar ingresos, no volumen  
     """)
