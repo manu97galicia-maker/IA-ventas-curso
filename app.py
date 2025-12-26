@@ -1,36 +1,50 @@
 import streamlit as st
 import pandas as pd
 
-st.set_page_config(page_title="IA Ventas", layout="wide")
+st.set_page_config(page_title="IA Ventas Cursos", layout="wide")
 
-st.title("📊 IA para Optimizar Ventas de Cursos")
+st.title("🧠 IA para Optimización Total de Ventas de Cursos")
+st.caption("Prioriza leads, asigna comerciales, optimiza llamadas y retargeting")
 
-# Datos simulados
+# -----------------------------
+# DATOS SIMULADOS (como si vinieran del CRM)
+# -----------------------------
 data = {
-    "Lead": ["Ana", "Carlos", "María", "Jorge"],
-    "Probabilidad de Cierre (%)": [82, 45, 67, 30],
-    "Valor (€)": [2400, 1200, 1800, 900],
-    "Comercial Asignado": ["Laura", "Juan", "Ana", "Juan"],
-    "Canal Óptimo": ["Llamada", "WhatsApp", "Videollamada", "Email"],
-    "Hora Recomendada": ["18:30", "19:00", "17:00", "10:00"],
-    "Siguiente Acción": [
-        "Llamar hoy",
-        "Retargeting WhatsApp",
-        "Segunda llamada mañana",
-        "Email automático"
-    ]
+    "Lead": ["Ana", "Carlos", "María", "Jorge", "Lucía"],
+    "Edad": [52, 34, 45, 29, 57],
+    "Curso": ["Executive", "Marketing", "MBA", "Programación", "Executive"],
+    "Precio (€)": [3200, 1200, 2800, 900, 3500],
+    "Probabilidad de Cierre (%)": [78, 42, 65, 25, 82],
+    "Primer Contacto": ["No respondió", "Respondió", "No compró", "No respondió", "Respondió"],
+    "Comercial Ideal": ["Ana", "Juan", "Laura", "Juan", "Ana"],
 }
 
 df = pd.DataFrame(data)
 
-st.subheader("🔥 Leads priorizados hoy")
-st.dataframe(df, use_container_width=True)
+# -----------------------------
+# MOTOR DE DECISIÓN
+# -----------------------------
+def siguiente_accion(row):
+    if row["Probabilidad de Cierre (%)"] >= 70:
+        return "📞 Llamar hoy"
+    elif row["Probabilidad de Cierre (%)"] >= 40:
+        return "🔁 Segunda llamada programada"
+    else:
+        return "📲 Retargeting automático"
 
-st.subheader("📈 Impacto estimado")
-col1, col2, col3 = st.columns(3)
-col1.metric("Leads analizados", "124")
-col2.metric("Cierres estimados", "+32 %")
-col3.metric("Ingresos extra", "+18.400 €")
+def canal_optimo(row):
+    if row["Edad"] >= 45:
+        return "Llamada / Videollamada"
+    elif row["Edad"] >= 30:
+        return "WhatsApp"
+    else:
+        return "Email"
 
-st.subheader("📞 Canales más efectivos")
-st.bar_chart(df["Canal Óptimo"].value_counts())
+def segunda_llamada(row):
+    if row["Primer Contacto"] == "No respondió":
+        return "📅 Mañana 18:00"
+    elif row["Primer Contacto"] == "No compró":
+        return "📅 En 3 días 17:00"
+
+def retargeting(row):
+    return "📨 Email con oferta personalizada"
